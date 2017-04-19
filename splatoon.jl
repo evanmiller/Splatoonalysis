@@ -1,5 +1,5 @@
 immutable RankInfo
-    label::String
+    label::AbstractString
     count::Int
     score_values::Array{Int}
     reward::Int
