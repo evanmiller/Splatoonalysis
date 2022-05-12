@@ -1,4 +1,7 @@
-immutable RankInfo
+using LinearAlgebra
+using Printf
+
+struct RankInfo
     label::AbstractString
     count::Int
     score_values::Array{Int}
@@ -6,18 +9,19 @@ immutable RankInfo
     penalty::Int
 end
 
-type ScoreTransitionMatrix
+mutable struct ScoreTransitionMatrix
     transition_matrix::Array{Float64, 2}
     rank_info::RankInfo
 end
 
-type ScoreSteadyState
+mutable struct ScoreSteadyState
     probabilities::Array{Float64}
     rank_info::RankInfo
 end
 
 function steady_state(transition_matrix::Array{Float64, 2})
-    values, vectors = eig(transition_matrix')
+    values = eigvals(transition_matrix')
+    vectors = eigvecs(transition_matrix')
     for i=1:length(values)
         if abs(values[i] - 1.0) < 1e-9
             vec = real(vectors[:,i])
@@ -35,7 +39,7 @@ end
 function rank_matrix_from_steady_states(steady_states::Array{ScoreSteadyState})
     count = sum([steady_states[i].rank_info.count for i=1:length(steady_states)])
 
-    rank_matrix = eye(count)
+    rank_matrix = Matrix{Float64}(I, count, count)
 
     i = 1
     for idx=1:length(steady_states)
@@ -78,11 +82,11 @@ end
 function report_rank_steady_state(rank_steady_state)
     println("Rank steady state: ", rank_steady_state)
 
-    println("C: ", round(100 * sum(rank_steady_state[1:3]), 2), "%")
-    println("B: ", round(100 * sum(rank_steady_state[4:6]), 2), "%")
-    println("A: ", round(100 * sum(rank_steady_state[7:9]), 2), "%")
-    println("S: ", round(100 * rank_steady_state[10], 2), "%")
-    println("S+: ", round(100 * rank_steady_state[11], 2), "%")
+    @printf("C: %.2f%%\n", 100 * sum(rank_steady_state[1:3]))
+    @printf("B: %.2f%%\n", 100 * sum(rank_steady_state[4:6]))
+    @printf("A: %.2f%%\n", 100 * sum(rank_steady_state[7:9]))
+    @printf("S: %.2f%%\n", 100 * rank_steady_state[10])
+    @printf("S+: %.2f%%\n", 100 * rank_steady_state[11])
 end
 
 function default_score_transitions()
